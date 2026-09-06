@@ -14,10 +14,14 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
 
             ui.add(
                 egui::DragValue::new(&mut app.work_minutes)
-                    .range(1..=180)
+                    .range(11..=180)
                     .suffix(" min"),
             );
         });
+
+        app.min_extra_work_minutes = app
+            .min_extra_work_minutes
+            .clamp(10, app.work_minutes.saturating_sub(1));
 
         ui.add_space(8.0);
 
@@ -39,6 +43,30 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
             ui.add(
                 egui::DragValue::new(&mut app.long_break_minutes)
                     .range(1..=120)
+                    .suffix(" min"),
+            );
+        });
+
+        ui.add_space(8.0);
+
+        centered_row(ui, 260.0, |ui| {
+            ui.label("Descans llarg cada:");
+
+            ui.add(
+                egui::DragValue::new(&mut app.long_break_every)
+                    .range(1..=24)
+                    .suffix(" cicles"),
+            );
+        });
+
+        ui.add_space(8.0);
+
+        centered_row(ui, 305.0, |ui| {
+            ui.label("Mínim sessió extra:");
+
+            ui.add(
+                egui::DragValue::new(&mut app.min_extra_work_minutes)
+                    .range(10..=app.work_minutes - 1)
                     .suffix(" min"),
             );
         });

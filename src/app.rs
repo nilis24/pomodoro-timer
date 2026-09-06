@@ -1,5 +1,6 @@
 use eframe::egui::{self, FontId, TextStyle};
 
+use crate::business::pomodoro::PlanExecution;
 use crate::screens;
 use crate::ui_helpers::centered_row;
 
@@ -7,8 +8,8 @@ use crate::ui_helpers::centered_row;
 pub enum Tab {
     AvailableTime,
     Cycles,
-    Settings,
     TimeLog,
+    Settings,
 }
 
 pub struct PomodoroApp {
@@ -20,7 +21,10 @@ pub struct PomodoroApp {
     pub work_minutes: u32,
     pub short_break_minutes: u32,
     pub long_break_minutes: u32,
+    pub long_break_every: u32,
+    pub min_extra_work_minutes: u32,
     pub use_remaining_for_extra_session: bool,
+    pub active_execution: Option<PlanExecution>,
 }
 
 impl Default for PomodoroApp {
@@ -34,7 +38,10 @@ impl Default for PomodoroApp {
             work_minutes: 25,
             short_break_minutes: 5,
             long_break_minutes: 15,
+            long_break_every: 4,
+            min_extra_work_minutes: 10,
             use_remaining_for_extra_session: false,
+            active_execution: None,
         }
     }
 }
@@ -50,8 +57,8 @@ impl eframe::App for PomodoroApp {
                 centered_row(ui, 515.0, |ui| {
                     ui.selectable_value(&mut self.tab, Tab::AvailableTime, "Temps disponible");
                     ui.selectable_value(&mut self.tab, Tab::Cycles, "Cicles");
-                    ui.selectable_value(&mut self.tab, Tab::Settings, "Configuració");
                     ui.selectable_value(&mut self.tab, Tab::TimeLog, "Registre de temps");
+                    ui.selectable_value(&mut self.tab, Tab::Settings, "Configuració");
                 });
 
                 ui.add_space(8.0);
@@ -61,8 +68,8 @@ impl eframe::App for PomodoroApp {
                 match self.tab {
                     Tab::AvailableTime => screens::available_time::show(self, ui),
                     Tab::Cycles => screens::cycles::show(self, ui),
-                    Tab::Settings => screens::settings::show(self, ui),
                     Tab::TimeLog => screens::time_log::show(ui),
+                    Tab::Settings => screens::settings::show(self, ui),
                 }
             });
         });
