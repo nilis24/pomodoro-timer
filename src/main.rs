@@ -2,7 +2,7 @@ use eframe::egui::{self, FontId, TextStyle};
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([420.0, 320.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([560.0, 360.0]),
 
         ..Default::default()
     };
@@ -19,6 +19,7 @@ enum Tab {
     AvailableTime,
     Cycles,
     Settings,
+    TimeLog,
 }
 
 struct PomodoroApp {
@@ -68,12 +69,14 @@ impl eframe::App for PomodoroApp {
             ui.vertical_centered(|ui| {
                 ui.add_space(8.0);
 
-                centered_row(ui, 360.0, |ui| {
+                centered_row(ui, 515.0, |ui| {
                     ui.selectable_value(&mut self.tab, Tab::AvailableTime, "Temps disponible");
 
                     ui.selectable_value(&mut self.tab, Tab::Cycles, "Cicles");
 
                     ui.selectable_value(&mut self.tab, Tab::Settings, "Configuració");
+
+                    ui.selectable_value(&mut self.tab, Tab::TimeLog, "Registre de temps");
                 });
 
                 ui.add_space(8.0);
@@ -84,6 +87,7 @@ impl eframe::App for PomodoroApp {
                     Tab::AvailableTime => self.available_time_ui(ui),
                     Tab::Cycles => self.cycles_ui(ui),
                     Tab::Settings => self.settings_ui(ui),
+                    Tab::TimeLog => self.time_log_ui(ui),
                 }
             });
         });
@@ -97,7 +101,7 @@ impl PomodoroApp {
 
             ui.add_space(18.0);
 
-            centered_row(ui, 300.0, |ui| {
+            centered_row(ui, 270.0, |ui| {
                 ui.label("Tinc disponibles:");
 
                 ui.add(
@@ -130,7 +134,7 @@ impl PomodoroApp {
 
             ui.add_space(18.0);
 
-            centered_row(ui, 210.0, |ui| {
+            centered_row(ui, 175.0, |ui| {
                 ui.label("Vull fer:");
 
                 ui.add(
@@ -154,7 +158,7 @@ impl PomodoroApp {
 
             ui.add_space(18.0);
 
-            centered_row(ui, 250.0, |ui| {
+            centered_row(ui, 135.0, |ui| {
                 ui.label("Treball:");
 
                 ui.add(
@@ -166,7 +170,7 @@ impl PomodoroApp {
 
             ui.add_space(8.0);
 
-            centered_row(ui, 250.0, |ui| {
+            centered_row(ui, 190.0, |ui| {
                 ui.label("Descans curt:");
 
                 ui.add(
@@ -178,7 +182,7 @@ impl PomodoroApp {
 
             ui.add_space(8.0);
 
-            centered_row(ui, 250.0, |ui| {
+            centered_row(ui, 195.0, |ui| {
                 ui.label("Descans llarg:");
 
                 ui.add(
@@ -197,6 +201,44 @@ impl PomodoroApp {
             }
         });
     }
+
+    fn time_log_ui(&mut self, ui: &mut egui::Ui) {
+        ui.vertical_centered(|ui| {
+            ui.heading("Registre de temps");
+        });
+
+        ui.add_space(18.0);
+
+        let column_spacing = 16.0;
+        let column_width = (ui.available_width() - column_spacing * 2.0) / 3.0;
+
+        egui::Grid::new("time_log_table")
+            .num_columns(3)
+            .striped(true)
+            .spacing([column_spacing, 10.0])
+            .min_col_width(column_width)
+            .show(ui, |ui| {
+                ui.add_sized([column_width, 20.0], egui::Label::new(egui::RichText::new("Dia i hora").strong()));
+                ui.add_sized([column_width, 20.0], egui::Label::new(egui::RichText::new("Temps treballat").strong()));
+                ui.add_sized([column_width, 20.0], egui::Label::new(egui::RichText::new("Temps de descans").strong()));
+                ui.end_row();
+
+                ui.add_sized([column_width, 20.0], egui::Label::new("06/09/2026 09:00"));
+                ui.add_sized([column_width, 20.0], egui::Label::new("1 h 40 min"));
+                ui.add_sized([column_width, 20.0], egui::Label::new("20 min"));
+                ui.end_row();
+
+                ui.add_sized([column_width, 20.0], egui::Label::new("06/09/2026 12:15"));
+                ui.add_sized([column_width, 20.0], egui::Label::new("50 min"));
+                ui.add_sized([column_width, 20.0], egui::Label::new("10 min"));
+                ui.end_row();
+
+                ui.add_sized([column_width, 20.0], egui::Label::new("05/09/2026 17:30"));
+                ui.add_sized([column_width, 20.0], egui::Label::new("2 h 05 min"));
+                ui.add_sized([column_width, 20.0], egui::Label::new("25 min"));
+                ui.end_row();
+            });
+    }
 }
 
 fn centered_row<R>(
@@ -207,12 +249,7 @@ fn centered_row<R>(
     ui.horizontal(|ui| {
         let side_space = ((ui.available_width() - width) / 2.0).max(0.0);
         ui.add_space(side_space);
-        ui.allocate_ui_with_layout(
-            egui::vec2(width, 32.0),
-            egui::Layout::left_to_right(egui::Align::Center),
-            add_contents,
-        )
-        .inner
+        add_contents(ui)
     })
     .inner
 }
