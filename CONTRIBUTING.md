@@ -8,7 +8,10 @@ This project follows a task-first contribution process. Please do not open a pul
 
 1. Create a GitHub issue
 
-   Before starting any work, create an issue using the configured GitHub issue template.
+   Before starting any work, create an issue using the appropriate configured GitHub issue template:
+
+   - Use the bug report template for reproducible bugs or unexpected behavior.
+   - Use the feature request template for new features or improvements.
 
    The project owner will review the issue, approve it if it fits the project, and assign it to the person who will work on it.
 
