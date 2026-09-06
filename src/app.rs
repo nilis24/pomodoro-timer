@@ -20,6 +20,7 @@ pub struct PomodoroApp {
     pub work_minutes: u32,
     pub short_break_minutes: u32,
     pub long_break_minutes: u32,
+    pub use_remaining_for_extra_session: bool,
 }
 
 impl Default for PomodoroApp {
@@ -33,6 +34,7 @@ impl Default for PomodoroApp {
             work_minutes: 25,
             short_break_minutes: 5,
             long_break_minutes: 15,
+            use_remaining_for_extra_session: false,
         }
     }
 }
