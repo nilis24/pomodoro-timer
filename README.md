@@ -28,7 +28,7 @@ You can install Rust from [rustup.rs](https://rustup.rs/).
 Clone the repository and enter the project directory:
 
 ```bash
-git clone <url-del-repositori>
+git clone <repository-url>
 cd pomodoro-timer
 ```
 
