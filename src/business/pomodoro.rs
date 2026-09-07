@@ -27,6 +27,28 @@ pub struct Plan {
     pub phases: Vec<PlanPhase>,
 }
 
+pub trait PlanCalculator {
+    fn calculate(&self) -> Plan;
+}
+
+pub struct AvailableTimePlanCalculator {
+    pub available: u32,
+    pub work: u32,
+    pub short_break: u32,
+    pub long_break: u32,
+    pub long_break_every: u32,
+    pub min_extra_work: u32,
+    pub extra_session: bool,
+}
+
+pub struct CyclePlanCalculator {
+    pub cycles: u32,
+    pub work: u32,
+    pub short_break: u32,
+    pub long_break: u32,
+    pub long_break_every: u32,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExecutionStatus {
     Running,
@@ -149,6 +171,56 @@ pub fn calculate_plan(
     min_extra_work: u32,
     extra_session: bool,
 ) -> Plan {
+    AvailableTimePlanCalculator {
+        available,
+        work,
+        short_break,
+        long_break,
+        long_break_every,
+        min_extra_work,
+        extra_session,
+    }
+    .calculate()
+}
+
+pub fn calculate_cycle_plan(
+    cycles: u32,
+    work: u32,
+    short_break: u32,
+    long_break: u32,
+    long_break_every: u32,
+) -> Plan {
+    CyclePlanCalculator {
+        cycles,
+        work,
+        short_break,
+        long_break,
+        long_break_every,
+    }
+    .calculate()
+}
+
+impl PlanCalculator for AvailableTimePlanCalculator {
+    fn calculate(&self) -> Plan {
+        calculate_available_time_plan(self)
+    }
+}
+
+impl PlanCalculator for CyclePlanCalculator {
+    fn calculate(&self) -> Plan {
+        calculate_cycles_plan(self)
+    }
+}
+
+fn calculate_available_time_plan(calculator: &AvailableTimePlanCalculator) -> Plan {
+    let available = calculator.available;
+    let work = calculator.work;
+    let short_break = calculator.short_break;
+    let long_break = calculator.long_break;
+    let long_break_every = calculator.long_break_every;
+    let min_extra_work = calculator.min_extra_work;
+    let extra_session = calculator.extra_session;
+
     if available == 0 {
         return Plan {
             cycles: 0,
@@ -249,9 +321,53 @@ pub fn calculate_plan(
     }
 }
 
+fn calculate_cycles_plan(calculator: &CyclePlanCalculator) -> Plan {
+    let mut phases = Vec::new();
+    let mut total_break = 0;
+    let mut total_work = 0;
+
+    for cycle in 1..=calculator.cycles {
+        total_work += calculator.work;
+        phases.push(PlanPhase {
+            kind: PhaseKind::Work,
+            duration: calculator.work,
+            cycle,
+        });
+
+        if cycle == calculator.cycles {
+            continue;
+        }
+
+        let (break_time, break_kind) =
+            if calculator.long_break_every > 0 && cycle % calculator.long_break_every == 0 {
+                (calculator.long_break, PhaseKind::LongBreak)
+            } else {
+                (calculator.short_break, PhaseKind::ShortBreak)
+            };
+
+        total_break += break_time;
+        phases.push(PlanPhase {
+            kind: break_kind,
+            duration: break_time,
+            cycle,
+        });
+    }
+
+    Plan {
+        cycles: calculator.cycles,
+        work_time: total_work,
+        break_time: total_break,
+        extra_session: false,
+        extra_session_time: 0,
+        used_time: total_work + total_break,
+        remaining_time: 0,
+        phases,
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::calculate_plan;
+    use super::{PhaseKind, calculate_cycle_plan, calculate_plan};
 
     #[test]
     fn uses_available_time_as_one_short_work_cycle() {
@@ -324,5 +440,28 @@ mod tests {
         assert_eq!(plan.break_time, 20);
         assert_eq!(plan.used_time, 95);
         assert_eq!(plan.remaining_time, 5);
+    }
+
+    #[test]
+    fn calculates_plan_for_fixed_number_of_cycles_without_trailing_break() {
+        let plan = calculate_cycle_plan(4, 25, 5, 15, 4);
+
+        assert_eq!(plan.cycles, 4);
+        assert_eq!(plan.work_time, 100);
+        assert_eq!(plan.break_time, 15);
+        assert_eq!(plan.used_time, 115);
+        assert_eq!(plan.remaining_time, 0);
+        assert_eq!(plan.phases.len(), 7);
+        assert_eq!(plan.phases.last().unwrap().kind, PhaseKind::Work);
+    }
+
+    #[test]
+    fn uses_long_break_between_fixed_cycles() {
+        let plan = calculate_cycle_plan(5, 25, 5, 15, 2);
+
+        assert_eq!(plan.work_time, 125);
+        assert_eq!(plan.break_time, 40);
+        assert_eq!(plan.used_time, 165);
+        assert_eq!(plan.phases[3].kind, PhaseKind::LongBreak);
     }
 }
