@@ -15,7 +15,7 @@ The project is written in Rust and uses [`eframe`](https://crates.io/crates/efra
 
 ## Project status
 
-The project is in an early stage. Available-time planning and timer execution are already functional. Some screens, such as the time log and cycle-based planning, are currently prepared as a foundation for future improvements.
+The project has released it's MVP version.
 
 ## Requirements
 
