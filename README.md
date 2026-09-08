@@ -72,6 +72,11 @@ Main structure:
 - `src/screens/`: interface screens.
 - `src/ui_helpers.rs`: shared interface helpers.
 
+## Attributions
+
+- Sound Effect by <a href="https://pixabay.com/users/universfield-28281460/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494256">Universfield</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494256">Pixabay</a>
+
+
 ## Contributing
 
 Contributions are welcome. Before opening an issue or pull request, please review [`CONTRIBUTING.md`](CONTRIBUTING.md).

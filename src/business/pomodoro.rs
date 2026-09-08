@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use chrono::{DateTime, Local};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PhaseKind {
     Work,
@@ -57,11 +59,18 @@ pub enum ExecutionStatus {
 }
 
 #[derive(Debug, Clone)]
+pub struct PhaseCompletion {
+    pub completed_phase: PlanPhase,
+    pub next_phase: Option<PlanPhase>,
+}
+
+#[derive(Debug, Clone)]
 pub struct PlanExecution {
     pub plan: Plan,
     pub phase_index: usize,
     pub remaining_seconds: u32,
     pub status: ExecutionStatus,
+    pub started_at: DateTime<Local>,
     last_tick: Option<Instant>,
 }
 
@@ -83,6 +92,7 @@ impl PlanExecution {
             phase_index: 0,
             remaining_seconds,
             status,
+            started_at: Local::now(),
             last_tick: Some(Instant::now()),
         }
     }
@@ -113,6 +123,7 @@ impl PlanExecution {
             .first()
             .map(|phase| phase.duration * 60)
             .unwrap_or(0);
+        self.started_at = Local::now();
         self.status = if self.remaining_seconds > 0 {
             ExecutionStatus::Paused
         } else {
@@ -121,44 +132,89 @@ impl PlanExecution {
         self.last_tick = None;
     }
 
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self) -> Vec<PhaseCompletion> {
         if self.status != ExecutionStatus::Running {
-            return;
+            return Vec::new();
         }
 
         let now = Instant::now();
         let Some(last_tick) = self.last_tick else {
             self.last_tick = Some(now);
-            return;
+            return Vec::new();
         };
 
         let elapsed_seconds = now.duration_since(last_tick).as_secs() as u32;
         if elapsed_seconds == 0 {
-            return;
+            return Vec::new();
         }
 
         self.last_tick = Some(last_tick + std::time::Duration::from_secs(elapsed_seconds as u64));
-        self.advance(elapsed_seconds);
+        self.advance(elapsed_seconds)
     }
 
-    fn advance(&mut self, mut seconds: u32) {
+    fn advance(&mut self, mut seconds: u32) -> Vec<PhaseCompletion> {
+        let mut completions = Vec::new();
+
         while seconds > 0 && self.status == ExecutionStatus::Running {
             if seconds < self.remaining_seconds {
                 self.remaining_seconds -= seconds;
                 break;
             }
 
+            let completed_phase = self.current_phase().cloned();
             seconds -= self.remaining_seconds;
             self.phase_index += 1;
 
-            if let Some(phase) = self.current_phase() {
-                self.remaining_seconds = phase.duration * 60;
+            if let Some(next_phase) = self.current_phase().cloned() {
+                self.remaining_seconds = next_phase.duration * 60;
+                if let Some(completed_phase) = completed_phase {
+                    completions.push(PhaseCompletion {
+                        completed_phase,
+                        next_phase: Some(next_phase),
+                    });
+                }
             } else {
                 self.remaining_seconds = 0;
                 self.status = ExecutionStatus::Finished;
                 self.last_tick = None;
+                if let Some(completed_phase) = completed_phase {
+                    completions.push(PhaseCompletion {
+                        completed_phase,
+                        next_phase: None,
+                    });
+                }
             }
         }
+
+        completions
+    }
+
+    pub fn worked_seconds(&self) -> u32 {
+        self.elapsed_seconds_for(|kind| matches!(kind, PhaseKind::Work | PhaseKind::ExtraWork))
+    }
+
+    pub fn break_seconds(&self) -> u32 {
+        self.elapsed_seconds_for(|kind| {
+            matches!(kind, PhaseKind::ShortBreak | PhaseKind::LongBreak)
+        })
+    }
+
+    fn elapsed_seconds_for(&self, include_kind: impl Fn(&PhaseKind) -> bool) -> u32 {
+        self.plan
+            .phases
+            .iter()
+            .enumerate()
+            .filter(|(_, phase)| include_kind(&phase.kind))
+            .map(|(index, phase)| {
+                if index < self.phase_index {
+                    phase.duration * 60
+                } else if index == self.phase_index && self.status != ExecutionStatus::Finished {
+                    phase.duration * 60 - self.remaining_seconds
+                } else {
+                    0
+                }
+            })
+            .sum()
     }
 }
 
@@ -367,7 +423,14 @@ fn calculate_cycles_plan(calculator: &CyclePlanCalculator) -> Plan {
 
 #[cfg(test)]
 mod tests {
-    use super::{PhaseKind, calculate_cycle_plan, calculate_plan};
+    use std::time::Instant;
+
+    use chrono::Local;
+
+    use super::{
+        ExecutionStatus, PhaseKind, Plan, PlanExecution, PlanPhase, calculate_cycle_plan,
+        calculate_plan,
+    };
 
     #[test]
     fn uses_available_time_as_one_short_work_cycle() {
@@ -463,5 +526,45 @@ mod tests {
         assert_eq!(plan.break_time, 40);
         assert_eq!(plan.used_time, 165);
         assert_eq!(plan.phases[3].kind, PhaseKind::LongBreak);
+    }
+
+    #[test]
+    fn counts_completed_and_current_phase_elapsed_seconds() {
+        let execution = PlanExecution {
+            plan: Plan {
+                cycles: 2,
+                work_time: 50,
+                break_time: 5,
+                extra_session: false,
+                extra_session_time: 0,
+                used_time: 55,
+                remaining_time: 0,
+                phases: vec![
+                    PlanPhase {
+                        kind: PhaseKind::Work,
+                        duration: 25,
+                        cycle: 1,
+                    },
+                    PlanPhase {
+                        kind: PhaseKind::ShortBreak,
+                        duration: 5,
+                        cycle: 1,
+                    },
+                    PlanPhase {
+                        kind: PhaseKind::Work,
+                        duration: 25,
+                        cycle: 2,
+                    },
+                ],
+            },
+            phase_index: 2,
+            remaining_seconds: 20 * 60,
+            status: ExecutionStatus::Paused,
+            started_at: Local::now(),
+            last_tick: Some(Instant::now()),
+        };
+
+        assert_eq!(execution.worked_seconds(), 30 * 60);
+        assert_eq!(execution.break_seconds(), 5 * 60);
     }
 }

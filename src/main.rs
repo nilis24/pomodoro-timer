@@ -2,6 +2,7 @@ use eframe::egui;
 
 mod app;
 mod business;
+mod notifier;
 mod screens;
 mod ui_helpers;
 

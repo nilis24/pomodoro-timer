@@ -2,13 +2,20 @@ use eframe::egui;
 
 use crate::app::PomodoroApp;
 use crate::business::pomodoro::{ExecutionStatus, PhaseKind};
+use crate::business::time_log::TimeLogEntry;
 use crate::ui_helpers::centered_row;
 
 pub fn show_execution(app: &mut PomodoroApp, ui: &mut egui::Ui) {
     let mut stop_execution = false;
+    let mut log_completed_execution = false;
+    let mut log_stopped_execution = false;
+    let mut completions = Vec::new();
 
     if let Some(execution) = &mut app.active_execution {
-        execution.tick();
+        completions = execution.tick();
+        log_completed_execution = completions
+            .iter()
+            .any(|completion| completion.next_phase.is_none());
 
         if execution.status == ExecutionStatus::Running {
             ui.ctx()
@@ -84,10 +91,40 @@ pub fn show_execution(app: &mut PomodoroApp, ui: &mut egui::Ui) {
                 }
             });
         });
+
+        if stop_execution
+            && execution.status != ExecutionStatus::Finished
+            && !log_completed_execution
+        {
+            log_stopped_execution = true;
+        }
+    }
+
+    if log_completed_execution {
+        log_execution(app, true);
     }
 
     if stop_execution {
+        if log_stopped_execution {
+            log_execution(app, false);
+        }
         app.active_execution = None;
+    }
+
+    for completion in completions {
+        app.phase_notifier.notify_phase_completion(&completion);
+    }
+}
+
+fn log_execution(app: &mut PomodoroApp, completed: bool) {
+    let Some(execution) = &app.active_execution else {
+        return;
+    };
+
+    let entry = TimeLogEntry::from_execution(execution, completed);
+    match app.time_log_repository.append(entry) {
+        Ok(entries) => app.time_log_entries = entries,
+        Err(error) => eprintln!("No s'ha pogut desar el registre de temps: {error}"),
     }
 }
 

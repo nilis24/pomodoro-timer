@@ -1,6 +1,8 @@
 use eframe::egui::{self, FontId, TextStyle};
 
 use crate::business::pomodoro::PlanExecution;
+use crate::business::time_log::{JsonTimeLogRepository, TimeLogEntry};
+use crate::notifier::{DesktopPhaseNotifier, PhaseNotifier};
 use crate::screens;
 use crate::ui_helpers::centered_row;
 
@@ -25,10 +27,19 @@ pub struct PomodoroApp {
     pub min_extra_work_minutes: u32,
     pub use_remaining_for_extra_session: bool,
     pub active_execution: Option<PlanExecution>,
+    pub phase_notifier: Box<dyn PhaseNotifier>,
+    pub time_log_repository: JsonTimeLogRepository,
+    pub time_log_entries: Vec<TimeLogEntry>,
 }
 
 impl Default for PomodoroApp {
     fn default() -> Self {
+        let time_log_repository = JsonTimeLogRepository::default();
+        let time_log_entries = time_log_repository.load().unwrap_or_else(|error| {
+            eprintln!("No s'ha pogut carregar el registre de temps: {error}");
+            Vec::new()
+        });
+
         Self {
             tab: Tab::AvailableTime,
             remaining_seconds: 25 * 60,
@@ -42,6 +53,9 @@ impl Default for PomodoroApp {
             min_extra_work_minutes: 10,
             use_remaining_for_extra_session: false,
             active_execution: None,
+            phase_notifier: Box::<DesktopPhaseNotifier>::default(),
+            time_log_repository,
+            time_log_entries,
         }
     }
 }
@@ -68,7 +82,7 @@ impl eframe::App for PomodoroApp {
                 match self.tab {
                     Tab::AvailableTime => screens::available_time::show(self, ui),
                     Tab::Cycles => screens::cycles::show(self, ui),
-                    Tab::TimeLog => screens::time_log::show(ui),
+                    Tab::TimeLog => screens::time_log::show(self, ui),
                     Tab::Settings => screens::settings::show(self, ui),
                 }
             });
