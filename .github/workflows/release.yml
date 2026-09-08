@@ -5,39 +5,76 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build:
+    name: Build ${{ matrix.artifact_name }}
+    runs-on: ${{ matrix.os }}
+
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: pomodoro-linux
-            binary: target/release/pomodoro
+            artifact_name: pomodoro-timer-linux-deb
+            package_format: deb
+            package_glob: dist/*.deb
 
           - os: windows-latest
-            artifact_name: pomodoro-windows
-            binary: target/release/pomodoro.exe
+            artifact_name: pomodoro-timer-windows-nsis
+            package_format: nsis
+            package_glob: dist/*.exe
 
           - os: macos-latest
-            artifact_name: pomodoro-macos
-            binary: target/release/pomodoro
-
-    runs-on: ${{ matrix.os }}
+            artifact_name: pomodoro-timer-macos-dmg
+            package_format: dmg
+            package_glob: dist/*.dmg
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Rust
         run: |
           rustup update stable
           rustup default stable
 
-      - name: Build release
-        run: cargo build --release
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libx11-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libxkbcommon-dev \
+            pkg-config
 
-      - name: Upload binary
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        run: choco install nsis -y
+
+      - name: Install cargo-packager
+        run: cargo install cargo-packager --locked
+
+      - name: Test
+        run: cargo test
+
+      - name: Package installer
+        run: cargo packager --release --formats ${{ matrix.package_format }}
+
+      - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.binary }}
+          path: ${{ matrix.package_glob }}
+          if-no-files-found: error
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.package_glob }}

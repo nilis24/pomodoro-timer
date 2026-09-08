@@ -42,7 +42,7 @@ impl PhaseNotifier for DesktopPhaseNotifier {
 
 fn show_desktop_notification(summary: &str, body: &str) {
     if let Err(error) = Notification::new()
-        .appname("Pomodoro")
+        .appname("Pomodoro Timer")
         .summary(summary)
         .body(body)
         .icon("pomodoro-timer")

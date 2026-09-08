@@ -1,12 +1,12 @@
 # Pomodoro Timer
 
-An open source desktop application for planning and running Pomodoro sessions based on the time you have available.
+An open source desktop application for planning and running Pomodoro Timer sessions based on the time you have available.
 
 The project is written in Rust and uses [`eframe`](https://crates.io/crates/eframe) / `egui` for the graphical interface.
 
 ## Features
 
-- Pomodoro planning based on available time.
+- Pomodoro Timer planning based on available time.
 - Automatic calculation of work sessions, short breaks, and long breaks.
 - Option to add an extra session with the remaining time when it meets the configured minimum.
 - Timer with pause, resume, reset, and stop controls.
@@ -68,7 +68,7 @@ Main structure:
 
 - `src/main.rs`: application entry point.
 - `src/app.rs`: main application state and screen navigation.
-- `src/business/pomodoro.rs`: Pomodoro plan calculation and execution logic.
+- `src/business/pomodoro.rs`: Pomodoro Timer plan calculation and execution logic.
 - `src/screens/`: interface screens.
 - `src/ui_helpers.rs`: shared interface helpers.
 

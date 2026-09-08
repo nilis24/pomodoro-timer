@@ -1,6 +1,9 @@
 use eframe::egui;
 
 use crate::app::PomodoroApp;
+use crate::business::config::{
+    MAX_AVAILABLE_HOURS, MAX_AVAILABLE_MINUTES, MINUTE_STEP, MINUTES_INPUT_MAX, MINUTES_INPUT_MIN,
+};
 use crate::business::pomodoro::{self, PlanExecution};
 use crate::screens::timer;
 use crate::ui_helpers::centered_row;
@@ -29,7 +32,7 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
                 ui,
                 HOURS_INPUT_WIDTH,
                 egui::DragValue::new(&mut hours_input)
-                    .range(0..=24)
+                    .range(0..=MAX_AVAILABLE_HOURS as i32)
                     .speed(1)
                     .suffix(" h"),
             );
@@ -38,8 +41,8 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
                 ui,
                 MINUTES_INPUT_WIDTH,
                 egui::DragValue::new(&mut minutes_input)
-                    .range(-5..=64)
-                    .speed(5)
+                    .range(MINUTES_INPUT_MIN..=MINUTES_INPUT_MAX)
+                    .speed(MINUTE_STEP)
                     .suffix(" min"),
             );
 
@@ -58,20 +61,20 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
         let available_minutes = app.available_hours * 60 + app.available_minutes;
         let plan_without_extra = pomodoro::calculate_plan(
             available_minutes,
-            app.work_minutes,
-            app.short_break_minutes,
-            app.long_break_minutes,
-            app.long_break_every,
-            app.min_extra_work_minutes,
+            app.config.work_minutes,
+            app.config.short_break_minutes,
+            app.config.long_break_minutes,
+            app.config.long_break_every,
+            app.config.min_extra_work_minutes,
             false,
         );
         let plan_with_extra = pomodoro::calculate_plan(
             available_minutes,
-            app.work_minutes,
-            app.short_break_minutes,
-            app.long_break_minutes,
-            app.long_break_every,
-            app.min_extra_work_minutes,
+            app.config.work_minutes,
+            app.config.short_break_minutes,
+            app.config.long_break_minutes,
+            app.config.long_break_every,
+            app.config.min_extra_work_minutes,
             true,
         );
         let selected_plan = if app.use_remaining_for_extra_session && plan_with_extra.extra_session
@@ -116,11 +119,11 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
         if ui.button("Iniciar pomodoro").clicked() {
             let plan = pomodoro::calculate_plan(
                 available_minutes,
-                app.work_minutes,
-                app.short_break_minutes,
-                app.long_break_minutes,
-                app.long_break_every,
-                app.min_extra_work_minutes,
+                app.config.work_minutes,
+                app.config.short_break_minutes,
+                app.config.long_break_minutes,
+                app.config.long_break_every,
+                app.config.min_extra_work_minutes,
                 app.use_remaining_for_extra_session,
             );
 
@@ -130,7 +133,7 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
 }
 
 fn max_available_minutes() -> i32 {
-    24 * 60 + 59
+    (MAX_AVAILABLE_HOURS * 60 + MAX_AVAILABLE_MINUTES) as i32
 }
 
 fn put_time_drag_value(
@@ -156,13 +159,13 @@ fn set_available_time(app: &mut PomodoroApp, total_minutes: i32) {
 
 fn normalize_minutes_input(minutes: i32) -> i32 {
     if minutes >= 0 {
-        let remainder = minutes % 5;
+        let remainder = minutes % MINUTE_STEP;
         if remainder == 0 {
             minutes
         } else {
-            minutes + 5 - remainder
+            minutes + MINUTE_STEP - remainder
         }
     } else {
-        minutes.div_euclid(5) * 5
+        minutes.div_euclid(MINUTE_STEP) * MINUTE_STEP
     }
 }

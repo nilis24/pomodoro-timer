@@ -1,6 +1,7 @@
 use eframe::egui;
 
 use crate::app::PomodoroApp;
+use crate::business::config::{MAX_CYCLE_COUNT, MIN_CYCLE_COUNT};
 use crate::business::pomodoro::{self, PlanExecution};
 use crate::screens::timer;
 use crate::ui_helpers::centered_row;
@@ -22,17 +23,17 @@ pub fn show(app: &mut PomodoroApp, ui: &mut egui::Ui) {
             ui.add_sized(
                 [84.0, ui.spacing().interact_size.y],
                 egui::DragValue::new(&mut app.cycle_count)
-                    .range(1..=24)
+                    .range(MIN_CYCLE_COUNT..=MAX_CYCLE_COUNT)
                     .suffix(" cicles"),
             );
         });
 
         let plan = pomodoro::calculate_cycle_plan(
             app.cycle_count,
-            app.work_minutes,
-            app.short_break_minutes,
-            app.long_break_minutes,
-            app.long_break_every,
+            app.config.work_minutes,
+            app.config.short_break_minutes,
+            app.config.long_break_minutes,
+            app.config.long_break_every,
         );
 
         ui.add_space(12.0);

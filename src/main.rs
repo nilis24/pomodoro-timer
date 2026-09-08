@@ -1,3 +1,5 @@
+#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+
 use eframe::egui;
 
 mod app;
@@ -21,13 +23,12 @@ fn main() -> eframe::Result<()> {
     };
 
     eframe::run_native(
-        "Pomodoro",
+        "Pomodoro Timer",
         options,
         Box::new(|_cc| Ok(Box::new(PomodoroApp::default()))),
     )
 }
 
 fn load_window_icon() -> Option<egui::IconData> {
-    let icon_bytes = std::fs::read("assets/icon.png").ok()?;
-    eframe::icon_data::from_png_bytes(&icon_bytes).ok()
+    eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon.png")).ok()
 }

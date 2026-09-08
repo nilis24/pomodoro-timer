@@ -95,7 +95,7 @@ impl From<serde_json::Error> for TimeLogError {
 }
 
 fn default_time_log_path() -> PathBuf {
-    ProjectDirs::from("com", "Nilis", "Pomodoro")
+    ProjectDirs::from("com", "Nilis", "pomodoro-timer")
         .map(|dirs| dirs.data_local_dir().join("time-log.json"))
         .unwrap_or_else(|| PathBuf::from("time-log.json"))
 }
