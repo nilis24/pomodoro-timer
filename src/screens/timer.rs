@@ -43,7 +43,7 @@ pub fn show_execution(app: &mut PomodoroApp, ui: &mut egui::Ui) {
                         .size(44.0),
                 );
             } else {
-                ui.label("Sessió finalitzada");
+                ui.label("Sessio finalitzada");
                 ui.add_space(8.0);
                 ui.label(egui::RichText::new("00:00").monospace().size(44.0));
             }
