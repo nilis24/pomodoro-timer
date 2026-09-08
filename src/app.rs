@@ -1,6 +1,12 @@
 use eframe::egui::{self, FontId, TextStyle};
 
+use crate::business::config::{
+    AppConfig, DEFAULT_AVAILABLE_HOURS, DEFAULT_AVAILABLE_MINUTES, DEFAULT_CYCLE_COUNT,
+    TomlConfigRepository,
+};
 use crate::business::pomodoro::PlanExecution;
+use crate::business::time_log::{JsonTimeLogRepository, TimeLogEntry};
+use crate::notifier::{DesktopPhaseNotifier, PhaseNotifier};
 use crate::screens;
 use crate::ui_helpers::centered_row;
 
@@ -18,30 +24,41 @@ pub struct PomodoroApp {
     pub available_hours: u32,
     pub available_minutes: u32,
     pub cycle_count: u32,
-    pub work_minutes: u32,
-    pub short_break_minutes: u32,
-    pub long_break_minutes: u32,
-    pub long_break_every: u32,
-    pub min_extra_work_minutes: u32,
+    pub config: AppConfig,
     pub use_remaining_for_extra_session: bool,
     pub active_execution: Option<PlanExecution>,
+    pub phase_notifier: Box<dyn PhaseNotifier>,
+    pub config_repository: TomlConfigRepository,
+    pub time_log_repository: JsonTimeLogRepository,
+    pub time_log_entries: Vec<TimeLogEntry>,
 }
 
 impl Default for PomodoroApp {
     fn default() -> Self {
+        let config_repository = TomlConfigRepository::default();
+        let config = config_repository.load().unwrap_or_else(|error| {
+            eprintln!("No s'ha pogut carregar la configuracio: {error}");
+            AppConfig::default()
+        });
+        let time_log_repository = JsonTimeLogRepository::default();
+        let time_log_entries = time_log_repository.load().unwrap_or_else(|error| {
+            eprintln!("No s'ha pogut carregar el registre de temps: {error}");
+            Vec::new()
+        });
+
         Self {
             tab: Tab::AvailableTime,
-            remaining_seconds: 25 * 60,
-            available_hours: 2,
-            available_minutes: 0,
-            cycle_count: 4,
-            work_minutes: 25,
-            short_break_minutes: 5,
-            long_break_minutes: 15,
-            long_break_every: 4,
-            min_extra_work_minutes: 10,
+            remaining_seconds: config.work_minutes * 60,
+            available_hours: DEFAULT_AVAILABLE_HOURS,
+            available_minutes: DEFAULT_AVAILABLE_MINUTES,
+            cycle_count: DEFAULT_CYCLE_COUNT,
+            config,
             use_remaining_for_extra_session: false,
             active_execution: None,
+            phase_notifier: Box::<DesktopPhaseNotifier>::default(),
+            config_repository,
+            time_log_repository,
+            time_log_entries,
         }
     }
 }
@@ -68,7 +85,7 @@ impl eframe::App for PomodoroApp {
                 match self.tab {
                     Tab::AvailableTime => screens::available_time::show(self, ui),
                     Tab::Cycles => screens::cycles::show(self, ui),
-                    Tab::TimeLog => screens::time_log::show(ui),
+                    Tab::TimeLog => screens::time_log::show(self, ui),
                     Tab::Settings => screens::settings::show(self, ui),
                 }
             });

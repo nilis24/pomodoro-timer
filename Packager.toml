@@ -1,0 +1,15 @@
+name = "pomodoro-timer"
+productName = "Pomodoro Timer"
+identifier = "com.nilis.pomodoro-timer"
+version = "0.1.0"
+description = "Desktop Pomodoro Timer"
+licenseFile = "LICENSE"
+outDir = "dist"
+binariesDir = "target/release"
+beforePackagingCommand = "cargo build --release"
+icons = ["assets/icon.png", "assets/icon.ico"]
+resources = ["assets/icon.png"]
+
+[[binaries]]
+path = "pomodoro-timer"
+main = true

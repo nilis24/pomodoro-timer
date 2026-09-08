@@ -1,12 +1,12 @@
 # Pomodoro Timer
 
-An open source desktop application for planning and running Pomodoro sessions based on the time you have available.
+An open source desktop application for planning and running Pomodoro Timer sessions based on the time you have available.
 
 The project is written in Rust and uses [`eframe`](https://crates.io/crates/eframe) / `egui` for the graphical interface.
 
 ## Features
 
-- Pomodoro planning based on available time.
+- Pomodoro Timer planning based on available time.
 - Automatic calculation of work sessions, short breaks, and long breaks.
 - Option to add an extra session with the remaining time when it meets the configured minimum.
 - Timer with pause, resume, reset, and stop controls.
@@ -15,7 +15,7 @@ The project is written in Rust and uses [`eframe`](https://crates.io/crates/efra
 
 ## Project status
 
-The project is in an early stage. Available-time planning and timer execution are already functional. Some screens, such as the time log and cycle-based planning, are currently prepared as a foundation for future improvements.
+The project has released it's MVP version.
 
 ## Requirements
 
@@ -68,9 +68,14 @@ Main structure:
 
 - `src/main.rs`: application entry point.
 - `src/app.rs`: main application state and screen navigation.
-- `src/business/pomodoro.rs`: Pomodoro plan calculation and execution logic.
+- `src/business/pomodoro.rs`: Pomodoro Timer plan calculation and execution logic.
 - `src/screens/`: interface screens.
 - `src/ui_helpers.rs`: shared interface helpers.
+
+## Attributions
+
+- Sound Effect by <a href="https://pixabay.com/users/universfield-28281460/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494256">Universfield</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494256">Pixabay</a>
+
 
 ## Contributing
 
